@@ -3,6 +3,22 @@ type RustboxOutput = {
   stdout?: unknown;
   stderr?: unknown;
   output?: unknown;
+  cpu_time?: unknown;
+  cpuTime?: unknown;
+  wall_time?: unknown;
+  wallTime?: unknown;
+  cpu_wall?: unknown;
+  cpuWall?: unknown;
+  memory?: unknown;
+  memory_peak?: unknown;
+  memoryPeak?: unknown;
+  memory_limit?: unknown;
+  cpu_time_secs?: unknown;
+  wall_time_secs?: unknown;
+  memory_peak_bytes?: unknown;
+  memory_limit_bytes?: unknown;
+  memoryLimit?: unknown;
+  metrics?: unknown;
 };
 
 type RustboxResult = RustboxOutput & {
@@ -16,6 +32,19 @@ type RustboxSubmission = {
   id?: unknown;
   error?: unknown;
   message?: unknown;
+};
+
+export type ExecutionMetrics = {
+  cpuTime?: string;
+  wallTime?: string;
+  cpuWall?: string;
+  memoryPeak?: string;
+  memoryLimit?: string;
+};
+
+export type ExecutionResult = {
+  output: string[];
+  metrics?: ExecutionMetrics;
 };
 
 const SUBMISSION_STORAGE_KEY = "rustboxSubmissionId";
@@ -61,7 +90,39 @@ const isComplete = (result: RustboxResult): boolean => {
   );
 };
 
-const formatResult = (result: RustboxResult): string[] => {
+const formatMetric = (value: unknown): string | undefined => {
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  return undefined;
+};
+
+const getExecutionMetrics = (result: RustboxResult): ExecutionMetrics | undefined => {
+  const output = isRustboxOutput(result.output) ? result.output : undefined;
+  const resultOutput = isRustboxOutput(result.result?.output) ? result.result.output : undefined;
+  const rawMetrics = [result.metrics, output?.metrics, result.result?.metrics, resultOutput?.metrics].filter(isRustboxOutput);
+  const sources = [result, output, result.result, resultOutput, ...rawMetrics];
+  const getMetric = (...keys: (keyof RustboxOutput)[]) => {
+    for (const source of sources) {
+      if (!source) continue;
+      for (const key of keys) {
+        const value = formatMetric(source[key]);
+        if (value !== undefined) return value;
+      }
+    }
+    return undefined;
+  };
+
+  const metrics = {
+    cpuTime: getMetric("cpu_time_secs", "cpu_time", "cpuTime"),
+    wallTime: getMetric("wall_time_secs", "wall_time", "wallTime"),
+    cpuWall: getMetric("cpu_wall", "cpuWall"),
+    memoryPeak: getMetric("memory_peak_bytes", "memory_peak", "memoryPeak", "memory"),
+    memoryLimit: getMetric("memory_limit_bytes", "memory_limit", "memoryLimit"),
+  };
+
+  return Object.values(metrics).some(Boolean) ? metrics : undefined;
+};
+
+const formatResult = (result: RustboxResult): ExecutionResult => {
   const logs: string[] = [];
   const output = isRustboxOutput(result.output) ? result.output : undefined;
   const resultOutput = isRustboxOutput(result.result?.output) ? result.result.output : undefined;
@@ -74,7 +135,10 @@ const formatResult = (result: RustboxResult): string[] => {
   if (formattedStderr) logs.push(`Error: ${formattedStderr}`);
   if (logs.length === 0 && result.message) logs.push(formatOutput(result.message));
 
-  return logs.length > 0 ? logs : ["Execution completed without output."];
+  return {
+    output: logs.length > 0 ? logs : ["Execution completed without output."],
+    metrics: getExecutionMetrics(result),
+  };
 };
 
 const getResult = async (id: string): Promise<RustboxResult | null> => {
@@ -91,7 +155,7 @@ const getResult = async (id: string): Promise<RustboxResult | null> => {
   return result;
 };
 
-export const executeRustbox = async (language: string, code: string, stdin = ""): Promise<string[]> => {
+export const executeRustbox = async (language: string, code: string, stdin = ""): Promise<ExecutionResult> => {
   try {
     const response = await fetch("/api/execute", {
       method: "POST",
@@ -101,11 +165,11 @@ export const executeRustbox = async (language: string, code: string, stdin = "")
     const submission: RustboxSubmission = await response.json();
 
     if (!response.ok) {
-      return [`Error: ${formatOutput(submission.error || submission.message || "Failed to submit code.")}`];
+      return { output: [`Error: ${formatOutput(submission.error || submission.message || "Failed to submit code.")}`] };
     }
 
     if (typeof submission.id !== "string") {
-      return ["Error: Rustbox did not return a submission ID."];
+      return { output: ["Error: Rustbox did not return a submission ID."] };
     }
 
     localStorage.setItem(SUBMISSION_STORAGE_KEY, submission.id);
@@ -120,8 +184,8 @@ export const executeRustbox = async (language: string, code: string, stdin = "")
       await wait(POLL_INTERVAL_MS);
     }
 
-    return [`Error: Result check timed out for submission ${submission.id}.`];
+    return { output: [`Error: Result check timed out for submission ${submission.id}.`] };
   } catch (error: unknown) {
-    return [`Error: ${error instanceof Error ? error.message : String(error)}`];
+    return { output: [`Error: ${error instanceof Error ? error.message : String(error)}`] };
   }
 };

@@ -1,17 +1,42 @@
 "use client";
 
 import React, { useState } from "react";
+import type { ExecutionMetrics } from "@/lib/api";
 
 interface OutputWindowProps {
   output: string[];
+  executionMetrics?: ExecutionMetrics;
   htmlContent?: string | null;
   isLoading?: boolean;
+  height?: string;
 }
 
-const OutputWindow: React.FC<OutputWindowProps> = ({ output, htmlContent, isLoading }) => {
+const formatSeconds = (value: string) => {
+  const seconds = Number(value);
+  return Number.isFinite(seconds) ? `${(seconds * 1000).toFixed(1)} ms` : value;
+};
+
+const formatBytes = (value: string) => {
+  const bytes = Number(value);
+  return Number.isFinite(bytes) ? `${(bytes / 1024 / 1024).toFixed(2)} MB` : value;
+};
+
+const OutputWindow: React.FC<OutputWindowProps> = ({ output, executionMetrics, htmlContent, isLoading, height = "520px" }) => {
   const [copied, setCopied] = useState(false);
   const hasOutput = output.length > 0;
   const hasFault = output.some((line) => line.toLowerCase().includes("error") || line.toLowerCase().includes("exception"));
+  const cpuWall = executionMetrics?.cpuWall ?? (
+    executionMetrics?.cpuTime && executionMetrics.wallTime
+      ? String(Number(executionMetrics.cpuTime) / Number(executionMetrics.wallTime))
+      : undefined
+  );
+  const metrics = [
+    { label: "CPU time", value: executionMetrics?.cpuTime ? formatSeconds(executionMetrics.cpuTime) : "—" },
+    { label: "Wall time", value: executionMetrics?.wallTime ? formatSeconds(executionMetrics.wallTime) : "—" },
+    { label: "CPU/wall", value: cpuWall ? (Number.isFinite(Number(cpuWall)) ? Number(cpuWall).toFixed(3) : cpuWall) : "—" },
+    { label: "Peak memory", value: executionMetrics?.memoryPeak ? formatBytes(executionMetrics.memoryPeak) : "—" },
+    { label: "Memory limit", value: executionMetrics?.memoryLimit ? formatBytes(executionMetrics.memoryLimit) : "—" },
+  ];
 
   const copyOutput = async () => {
     if (!hasOutput) return;
@@ -21,10 +46,9 @@ const OutputWindow: React.FC<OutputWindowProps> = ({ output, htmlContent, isLoad
   };
 
   return (
-    <div className="flex h-[calc(100vh-310px)] min-h-[380px] max-h-[480px] flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/90 shadow-xl">
-      {/* Header */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-800/80 bg-zinc-900/60 px-4">
-        <div className="flex items-center gap-2.5">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/90 shadow-xl" style={{ height }}>
+      <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-zinc-800/80 bg-zinc-900/60 px-4">
+        <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
               {isLoading ? (
@@ -44,7 +68,6 @@ const OutputWindow: React.FC<OutputWindowProps> = ({ output, htmlContent, isLoad
               {htmlContent ? "Preview Output" : "Terminal Console"}
             </span>
           </div>
-
           <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[0.65rem] font-medium text-zinc-400">
             {isLoading ? "Running..." : hasFault ? "Execution Error" : hasOutput || htmlContent ? "Completed" : "Standby"}
           </span>
@@ -66,7 +89,7 @@ const OutputWindow: React.FC<OutputWindowProps> = ({ output, htmlContent, isLoad
             ) : (
               <>
                 <svg className="h-3.5 w-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 00-2-2h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 <span>Copy for AI</span>
               </>
@@ -75,7 +98,6 @@ const OutputWindow: React.FC<OutputWindowProps> = ({ output, htmlContent, isLoad
         )}
       </div>
 
-      {/* Main Terminal / Canvas area */}
       <div className="relative flex-1 overflow-hidden bg-zinc-950">
         {htmlContent ? (
           <iframe
@@ -103,14 +125,10 @@ const OutputWindow: React.FC<OutputWindowProps> = ({ output, htmlContent, isLoad
 
                   return (
                     <div key={index} className="flex items-start gap-2.5 py-0.5">
-                      <span className="select-none font-sans text-[0.68rem] text-zinc-600 w-5 shrink-0 pt-0.5 text-right font-medium">
+                      <span className="w-5 shrink-0 select-none pt-0.5 text-right font-sans text-[0.68rem] font-medium text-zinc-600">
                         {index + 1}
                       </span>
-                      <pre
-                        className={`flex-1 whitespace-pre-wrap break-words font-mono ${
-                          isError ? "text-rose-400 font-semibold" : "text-emerald-300"
-                        }`}
-                      >
+                      <pre className={`flex-1 whitespace-pre-wrap break-words font-mono ${isError ? "font-semibold text-rose-400" : "text-emerald-300"}`}>
                         {line}
                       </pre>
                     </div>
@@ -133,6 +151,23 @@ const OutputWindow: React.FC<OutputWindowProps> = ({ output, htmlContent, isLoad
           </div>
         )}
       </div>
+
+      <section aria-label="Execution metrics" className="shrink-0 border-t border-zinc-800/80 bg-zinc-900/40 px-4 py-3">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="h-px w-4 bg-emerald-500/70" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Execution metrics</h3>
+          </div>
+          <dl className="grid grid-cols-2 divide-x divide-y divide-zinc-800/80 overflow-hidden rounded-lg border border-zinc-800/80 bg-zinc-950/80 sm:grid-cols-5 sm:divide-y-0">
+            {metrics.map((metric) => (
+              <div key={metric.label} className="min-w-0 px-3 py-2">
+                <dt className="text-[0.62rem] font-medium uppercase tracking-wide text-zinc-500">{metric.label}</dt>
+                <dd className={`mt-0.5 truncate font-mono text-xs font-semibold ${metric.value === "—" ? "text-zinc-600" : "text-emerald-300"}`}>
+                  {metric.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
     </div>
   );
 };

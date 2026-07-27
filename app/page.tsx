@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import CodeEditor from "@/components/CodeEditor";
 import OutputWindow from "@/components/OutputWindow";
 import LanguageSelector from "@/components/LanguageSelector";
-import { executeRustbox } from "@/lib/api";
+import { executeRustbox, type ExecutionMetrics } from "@/lib/api";
 import {
   CODE_SNIPPETS,
   CODE_TEMPLATES,
@@ -68,6 +68,7 @@ export default function Home() {
   const [code, setCode] = useState<string>(CODE_SNIPPETS.javascript);
   const [stdin, setStdin] = useState("");
   const [output, setOutput] = useState<string[]>([]);
+  const [executionMetrics, setExecutionMetrics] = useState<ExecutionMetrics | undefined>();
   const [htmlContent, setHtmlContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingLanguages, setIsCheckingLanguages] = useState(false);
@@ -75,6 +76,7 @@ export default function Home() {
   const [languageError, setLanguageError] = useState("");
   const [showSupportedLanguages, setShowSupportedLanguages] = useState(false);
   const [activeExperiment, setActiveExperiment] = useState(0);
+  const [isEditorMaximized, setIsEditorMaximized] = useState(false);
 
   const hasResponse = output.length > 0 || Boolean(htmlContent);
 
@@ -88,6 +90,7 @@ export default function Home() {
       setCode(nextTemplate?.code || "");
       setStdin(nextTemplate?.stdin || "");
       setOutput([]);
+      setExecutionMetrics(undefined);
       setHtmlContent(null);
     },
     [],
@@ -116,6 +119,7 @@ export default function Home() {
         setCode(studyCase.code);
         setStdin(studyCase.stdin);
         setOutput([]);
+        setExecutionMetrics(undefined);
         setHtmlContent(null);
       }
       scrollToSegment("code-segment");
@@ -161,6 +165,7 @@ export default function Home() {
   const runCode = useCallback(async () => {
     if (isLoading) return;
     setOutput([]);
+    setExecutionMetrics(undefined);
     setHtmlContent(null);
     setIsLoading(true);
 
@@ -171,7 +176,9 @@ export default function Home() {
           `<script>window.STDIN = ${serializedStdin};<\/script>${code}`,
         );
       } else {
-        setOutput(await executeRustbox(language, code, stdin));
+        const result = await executeRustbox(language, code, stdin);
+        setOutput(result.output);
+        setExecutionMetrics(result.metrics);
       }
     } catch (err: unknown) {
       setOutput([
@@ -189,10 +196,13 @@ export default function Home() {
         event.preventDefault();
         runCode();
       }
+      if (event.key === "Escape" && isEditorMaximized) {
+        setIsEditorMaximized(false);
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [runCode]);
+  }, [runCode, isEditorMaximized]);
 
   const [activeSegment, setActiveSegment] = useState<string>("hero-segment");
 
@@ -635,7 +645,7 @@ export default function Home() {
         )}
 
         {/* Code & Terminal Workbench Grid */}
-        <div className="my-auto grid gap-6 lg:grid-cols-2 lg:items-stretch py-3">
+        <div className={`my-auto grid gap-6 py-3 ${isEditorMaximized ? "grid-cols-1" : "lg:grid-cols-2 lg:items-stretch"}`}>
           <CodeEditor
             language={language}
             value={code}
@@ -643,14 +653,20 @@ export default function Home() {
             stdin={stdin}
             onStdinChange={setStdin}
             onRunCode={runCode}
+            isMaximized={isEditorMaximized}
+            onToggleMaximize={() => setIsEditorMaximized((maximized) => !maximized)}
             height="calc(100vh - 310px)"
           />
 
-          <OutputWindow
-            output={output}
-            htmlContent={htmlContent}
-            isLoading={isLoading}
-          />
+          {!isEditorMaximized && (
+            <OutputWindow
+              output={output}
+              executionMetrics={executionMetrics}
+              htmlContent={htmlContent}
+              isLoading={isLoading}
+              height="calc(100vh - 310px)"
+            />
+          )}
         </div>
 
         {/* Segment Footer Hint */}

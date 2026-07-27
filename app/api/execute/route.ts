@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 const RUSTBOX_API_BASE_URL = "https://api.rustbox.sh/api";
 const RUSTBOX_SUBMIT_URL = `${RUSTBOX_API_BASE_URL}/submit`;
-const RUSTBOX_LANGUAGES_URL = `${RUSTBOX_API_BASE_URL}/languages`;
 
 type RustboxSubmission = {
   id?: unknown;
@@ -17,60 +16,9 @@ type RustboxSubmission = {
   };
 };
 
-type RustboxLanguage = string | {
-  id?: unknown;
-  language?: unknown;
-  name?: unknown;
-  aliases?: unknown;
-};
-
 const getSubmissionId = (result: RustboxSubmission): string | undefined => {
   const id = result.id || result.submissionId || result.submission_id || result.uuid || result.result?.id || result.result?.submissionId || result.result?.submission_id || result.result?.uuid;
   return typeof id === "string" ? id : undefined;
-};
-
-const normalizeLanguage = (value: unknown): string | undefined => {
-  return typeof value === "string" ? value.toLowerCase() : undefined;
-};
-
-const getLanguages = async (apiKey: string): Promise<Set<string>> => {
-  const response = await fetch(RUSTBOX_LANGUAGES_URL, {
-    headers: { "X-API-Key": apiKey },
-  });
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.error || result.message || "Failed to fetch languages.");
-  }
-
-  const languages = Array.isArray(result) ? result : result.languages;
-
-  if (!Array.isArray(languages)) {
-    return new Set();
-  }
-
-  return languages.reduce((items: Set<string>, item: RustboxLanguage) => {
-    if (typeof item === "string") {
-      items.add(item.toLowerCase());
-      return items;
-    }
-
-    const id = normalizeLanguage(item.id);
-    const language = normalizeLanguage(item.language);
-    const name = normalizeLanguage(item.name);
-
-    if (id) items.add(id);
-    if (language) items.add(language);
-    if (name) items.add(name);
-    if (Array.isArray(item.aliases)) {
-      item.aliases.forEach((alias) => {
-        const normalizedAlias = normalizeLanguage(alias);
-        if (normalizedAlias) items.add(normalizedAlias);
-      });
-    }
-
-    return items;
-  }, new Set<string>());
 };
 
 export async function POST(request: Request) {
@@ -93,20 +41,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const normalizedLanguage = normalizeLanguage(language);
-
-    if (!normalizedLanguage) {
+    if (typeof language !== "string") {
       return NextResponse.json(
         { error: "Language must be a string." },
-        { status: 400 }
-      );
-    }
-
-    const languages = await getLanguages(apiKey);
-
-    if (languages.size > 0 && !languages.has(normalizedLanguage)) {
-      return NextResponse.json(
-        { error: `${language} is not supported by Rustbox.` },
         { status: 400 }
       );
     }
@@ -117,7 +54,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
         "X-API-Key": apiKey,
       },
-      body: JSON.stringify({ language: normalizedLanguage, code, stdin }),
+      body: JSON.stringify({ language, code, stdin }),
     });
 
     const result = await response.json();

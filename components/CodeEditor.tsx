@@ -11,6 +11,8 @@ interface CodeEditorProps {
   stdin?: string;
   onStdinChange?: (value: string) => void;
   onRunCode?: () => void;
+  isMaximized?: boolean;
+  onToggleMaximize?: () => void;
   height?: string;
 }
 
@@ -49,6 +51,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   stdin = "",
   onStdinChange,
   onRunCode,
+  isMaximized = false,
+  onToggleMaximize,
   height = "520px",
 }) => {
   const handleEditorMount: OnMount = (editor, monaco) => {
@@ -75,8 +79,28 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
 
         <div className="flex items-center gap-2 text-xs font-medium text-zinc-400">
-          <kbd className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[0.65rem] text-zinc-300">Ctrl/⌘ + Enter</kbd>
-          <span>to submit</span>
+          <kbd className="hidden rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[0.65rem] text-zinc-300 sm:inline">Ctrl/⌘ + Enter</kbd>
+          <span className="hidden sm:inline">to submit</span>
+          {onToggleMaximize && (
+            <button
+              type="button"
+              onClick={onToggleMaximize}
+              aria-pressed={isMaximized}
+              aria-label={isMaximized ? "Restore workspace" : "Maximize editor"}
+              title={isMaximized ? "Restore workspace" : "Maximize editor"}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-800 bg-zinc-900 text-zinc-400 transition hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+            >
+              {isMaximized ? (
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 3H3v5m13-5h5v5M8 21H3v-5m18 0v5h-5M3 8l6-6m12 6l-6-6M3 16l6 6m12-6l-6 6" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 3H3v5m0-5l6 6m12-6h-5v5m5-5l-6 6M3 16v5h5m-5-5l6-6m12 6v5h-5m5-5l-6-6" />
+                </svg>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
