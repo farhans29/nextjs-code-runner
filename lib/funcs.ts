@@ -1,4 +1,4 @@
-export const runJavaScript = (code: string): string[] => {
+export const runJavaScript = (code: string, stdin = ""): string[] => {
   const logs: string[] = [];
   const originalLog = console.log;
   const originalError = console.error;
@@ -9,11 +9,10 @@ export const runJavaScript = (code: string): string[] => {
   console.warn = (...args) => logs.push(`Warning: ${args.map(arg => String(arg)).join(" ")}`);
 
   try {
-    // eslint-disable-next-line no-new-func
-    const func = new Function(code);
-    func();
-  } catch (error: Error | any) {
-    logs.push(`Error: ${error.message}`);
+    const func = new Function("stdin", code);
+    func(stdin);
+  } catch (error: unknown) {
+    logs.push(`Error: ${error instanceof Error ? error.message : String(error)}`);
   } finally {
     console.log = originalLog;
     console.error = originalError;

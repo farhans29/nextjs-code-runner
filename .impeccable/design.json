@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-27T00:00:00.000Z",
+  "title": "Design System: Signal Path Workbench",
+  "extensions": {
+    "colorMeta": {
+      "bench-black": { "role": "neutral", "displayName": "Bench Black", "canonical": "#0d0e0c", "tonalRamp": ["#080907", "#0d0e0c", "#171915", "#242720", "#363a33", "#777b6e", "#aaa58f", "#eee6cf"] },
+      "instrument-face": { "role": "neutral", "displayName": "Instrument Face", "canonical": "#171915", "tonalRamp": ["#080907", "#0d0e0c", "#171915", "#242720", "#363a33", "#777b6e", "#aaa58f", "#eee6cf"] },
+      "signal-amber": { "role": "primary", "displayName": "Signal Amber", "canonical": "#f0b94a", "tonalRamp": ["#3b2405", "#633b0b", "#8a5210", "#a86616", "#d68d26", "#f0b94a", "#ffd989", "#fff2cb"] },
+      "ready-green": { "role": "secondary", "displayName": "Ready Green", "canonical": "#9fbd78", "tonalRamp": ["#1e2a15", "#344725", "#4c6539", "#66844f", "#83a362", "#9fbd78", "#c3d6a8", "#e7efd9"] },
+      "fault-red": { "role": "tertiary", "displayName": "Fault Red", "canonical": "#d46a55", "tonalRamp": ["#36130e", "#5d2119", "#843326", "#aa4938", "#d46a55", "#e49180", "#f0b8ad", "#fae0da"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Instrument Display", "purpose": "Compressed thesis headlines and major learning stages." },
+      "title": { "displayName": "Bay Title", "purpose": "Instrument bay and experiment names." },
+      "body": { "displayName": "Guidance", "purpose": "Calm beginner instructions and recovery copy." },
+      "label": { "displayName": "Printed Legend", "purpose": "Real control, channel, and state labels only." },
+      "code": { "displayName": "Machine Signal", "purpose": "Executable code and exact stdout or stderr." }
+    },
+    "shadows": [
+      { "name": "assembled-bench", "value": "0 26px 60px rgba(0,0,0,0.38)", "purpose": "Separates the assembled workbench from the ambient black surface." },
+      { "name": "recessed-well", "value": "inset 0 3px 12px rgba(0,0,0,0.55)", "purpose": "Seats code and output below their instrument faces." },
+      { "name": "switch-depth", "value": "0 5px 0 #a86616, 0 12px 22px rgba(0,0,0,0.28)", "purpose": "Gives the Run switch tactile mechanical depth." }
+    ],
+    "motion": [
+      { "name": "signal-travel", "value": "850ms cubic-bezier(0.16,1,0.3,1)", "purpose": "Moves the amber execution signal from input to return bay while running." },
+      { "name": "control-response", "value": "150ms ease", "purpose": "Immediate switch, select, and experiment control feedback." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Run Switch",
+      "kind": "button",
+      "refersTo": "run-switch",
+      "description": "The only primary action and live amber control on the workbench.",
+      "html": "<button class=\"ds-run-switch\">Run code</button>",
+      "css": ".ds-run-switch{height:56px;border:1px solid #ffd16f;border-radius:6px;background:#f0b94a;color:#0d0e0c;padding:0 24px;font:800 13px/1 Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 5px 0 #a86616,0 12px 22px rgba(0,0,0,.28);transition:all 150ms ease}.ds-run-switch:hover{background:#ffd06b;transform:translateY(-1px)}.ds-run-switch:focus-visible{outline:3px solid #f0b94a;outline-offset:3px}.ds-run-switch:active{box-shadow:0 2px 0 #a86616;transform:translateY(3px)}"
+    },
+    {
+      "name": "Language Dial",
+      "kind": "input",
+      "refersTo": "language-dial",
+      "description": "Recessed language selector with a live amber input marker.",
+      "html": "<label class=\"ds-dial-label\">Input language<select class=\"ds-dial\"><option>Python · rustbox</option></select></label>",
+      "css": ".ds-dial-label{display:flex;flex-direction:column;gap:8px;color:#aaa58f;font:700 11px/1.2 Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase}.ds-dial{height:48px;min-width:208px;border:1px solid #363a33;border-radius:6px;background:#080907;color:#eee6cf;padding:0 40px 0 14px;font-size:14px;font-weight:700;box-shadow:inset 0 2px 8px rgba(0,0,0,.5)}.ds-dial:focus-visible{outline:3px solid #f0b94a;outline-offset:3px}"
+    },
+    {
+      "name": "Instrument Bay",
+      "kind": "card",
+      "refersTo": "instrument-bay",
+      "description": "Manufactured housing for editor and output with a recessed working well.",
+      "html": "<section class=\"ds-bay\"><header><small>INPUT BAY · EDITOR</small><h2>Change one thing</h2></header><div class=\"ds-well\">working surface</div></section>",
+      "css": ".ds-bay{overflow:hidden;border:1px solid #363a33;border-radius:12px;background:#171915;color:#eee6cf;box-shadow:0 14px 28px rgba(0,0,0,.24);font-family:Arial,sans-serif}.ds-bay header{border-bottom:1px solid #363a33;background:#1c1f19;padding:14px 18px}.ds-bay small{color:#aaa58f;font-size:11px;font-weight:700;letter-spacing:.14em}.ds-bay h2{margin:5px 0 0;font-family:Arial Narrow,Arial,sans-serif;font-size:20px}.ds-well{min-height:180px;background:#080907;padding:20px;box-shadow:inset 0 3px 12px rgba(0,0,0,.55);color:#aaa58f}"
+    },
+    {
+      "name": "Status Lamp",
+      "kind": "chip",
+      "refersTo": "status-lamp",
+      "description": "Functional state indicator for ready, running, and fault states.",
+      "html": "<span class=\"ds-status\"><i></i>System ready</span>",
+      "css": ".ds-status{display:inline-flex;align-items:center;gap:8px;color:#aaa58f;font:600 12px/1 Arial,sans-serif}.ds-status i{width:9px;height:9px;border-radius:50%;background:#9fbd78;box-shadow:0 1px 5px rgba(159,189,120,.45)}"
+    },
+    {
+      "name": "Experiment Channel",
+      "kind": "custom",
+      "refersTo": "experiment-control",
+      "description": "A learning prompt expressed as a selectable workbench channel.",
+      "html": "<button class=\"ds-channel\"><small>CH 1</small><strong>Predict</strong><span>Change one number and say what will happen.</span></button>",
+      "css": ".ds-channel{min-height:176px;border:0;border-top:1px solid #363a33;background:transparent;color:#aaa58f;padding:24px;text-align:left;font-family:Arial,sans-serif}.ds-channel:hover,.ds-channel:focus-visible{background:#1c1f19;color:#eee6cf}.ds-channel:focus-visible{outline:3px solid #f0b94a;outline-offset:3px}.ds-channel small{color:#f0b94a;font-size:11px;font-weight:800}.ds-channel strong{display:block;margin-top:20px;color:#eee6cf;font-family:Arial Narrow,Arial,sans-serif;font-size:24px}.ds-channel span{display:block;margin-top:12px;font-size:14px;line-height:1.6}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Signal Path Workbench",
+    "overview": "The application behaves like a teaching instrument built into a dark electronics bench. Code enters at the left bay, passes through a deliberate Run switch, and arrives as readable output at the right bay. The visible signal path makes the learning workflow—edit, run, read, ask—feel physical and repeatable without imitating a professional IDE.",
+    "keyCharacteristics": [
+      "A visible horizontal signal bus connects editing, execution, and feedback.",
+      "Graphite instrument faces, recessed wells, steel edges, and warm printed labels.",
+      "Amber is reserved for live action and signal flow; green means ready or successful; red means a recoverable fault.",
+      "Compact corners, precise alignment, and tactile controls replace soft dashboard cards."
+    ],
+    "rules": [
+      { "name": "The One Live Signal Rule", "body": "Amber marks only the current action, focus, or moving signal. It never becomes ambient decoration.", "section": "colors" },
+      { "name": "The Instrument Truth Rule", "body": "Every light, line, scale, and label communicates real workflow or state.", "section": "colors" },
+      { "name": "The Printed Legend Rule", "body": "Uppercase tracking belongs on concise equipment labels, never on paragraphs or decorative eyebrows.", "section": "typography" },
+      { "name": "The Recess Before Float Rule", "body": "Working areas are inset into their panels. Avoid floating translucent cards and colored halos.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do make edit → run → read visible in composition and state.",
+      "Do use instrument labels only for real controls, channels, and statuses.",
+      "Do keep stdout and stderr exact, readable, and easy to use in an AI prompt.",
+      "Do retain clear browser affordances and keyboard focus."
+    ],
+    "donts": [
+      "Don't use glass panels, neon gradient fields, or generic AI dashboard cards.",
+      "Don't add decorative meters, graphs, lights, or technical markings without real meaning.",
+      "Don't compress guidance until a beginner cannot understand the next action.",
+      "Don't let visual character obscure Monaco, output, language selection, or Run Code."
+    ]
+  }
+}
