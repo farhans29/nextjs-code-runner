@@ -1,32 +1,32 @@
 {
-  "name": "next-moncao-editor",
+  "name": "nextjs-codelab",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "pages:build": "npx --legacy-peer-deps @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "eslint",
-    "preview": "npm run pages:build && wrangler pages dev .vercel/output/static",
-    "deploy": "npm run pages:build && wrangler pages deploy .vercel/output/static",
-    "cf-typegen": "wrangler types"
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
-    "next": "16.1.6",
+    "next": "^16.2.12",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "wrangler": "^3.107.0"
+    "wrangler": "^4.114.0"
   }
 }
